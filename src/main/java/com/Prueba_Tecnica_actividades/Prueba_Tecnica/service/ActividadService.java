@@ -1,7 +1,6 @@
 package com.Prueba_Tecnica_actividades.Prueba_Tecnica.service;
 
 import com.Prueba_Tecnica_actividades.Prueba_Tecnica.entities.Actividad;
-import com.Prueba_Tecnica_actividades.Prueba_Tecnica.entities.ActividadDto;
 import com.Prueba_Tecnica_actividades.Prueba_Tecnica.entities.Usuario;
 import com.Prueba_Tecnica_actividades.Prueba_Tecnica.repository.ActividadRepository;
 import com.Prueba_Tecnica_actividades.Prueba_Tecnica.repository.UsuarioRepository;
@@ -11,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -128,52 +128,51 @@ public class ActividadService {
     }
 
     public ResponseEntity<?> exportarListadoActividades(Long usuario_id) {
-        try {
-            log.info("estamos exportando actividades");
-            Optional<Usuario> usuarioOptional = usuarioRepository.findById(usuario_id);
-            if (usuarioOptional.isEmpty()) {
-                return new ResponseEntity<>("No se ha encontrado el usuario buscado", HttpStatus.NOT_FOUND);
-            } else {
-                try {
-                    FileWriter file = new FileWriter("C:\\Users\\juanc\\Desktop\\java_ejemplo\\actividad.json");
-                    List<Actividad> listado = usuarioOptional.get().getActividades();
-                    List<ActividadDto> listadoActividades = convertirListado(listado);
-                    JSONArray listadoJson = new JSONArray();
+        log.info("estamos exportando actividades");
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(usuario_id);
+        if (usuarioOptional.isEmpty()) {
+            log.info("No se encontro el uuuusususususususurioooooooo");
+            return new ResponseEntity<>("No se ha encontrado el usuario buscado", HttpStatus.NOT_FOUND);
+        } else {
 
-                    for (ActividadDto ele : listadoActividades) {
-                        listadoJson.add(ele);
-                    }
-                    file.write(listadoJson.toJSONString());
-                    file.flush();
+            log.info("Estamos dentro del else vamos a crear el JSONObject");
+            JSONObject actvividadJSON = new JSONObject();
+            List<Actividad> listado = usuarioOptional.get().getActividades();
+            JSONArray listadoJson = new JSONArray();
 
+            for (Actividad ele : listado) {
+                //creo un objeto JSON
+                JSONObject aux = new JSONObject();
+                aux.put("id", ele.getId());
+                aux.put("nombre", ele.getNombre());
+                aux.put("descripcion", ele.getDescripcion());
+                aux.put("numUsuarios", ele.getNumUsuarios());
+                aux.put("capacidadMaxima", ele.getCapacidadMaxima());
 
-                    return new ResponseEntity<>("El fichero se ha exportado correctamente", HttpStatus.OK);
+                log.info("Estamos dentro del for hemos creado el JSONObject");
 
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                listadoJson.add(aux);
             }
-        } catch (Exception exception) {
-            exception.printStackTrace();
+            actvividadJSON.put("lista", listadoJson);
+            try {
+                log.info("Estamos dentro del try vamos a crear el fichero");
+                FileWriter file = new FileWriter("C:\\Users\\juanc\\Desktop\\java_ejemplo\\actividad.json");
+                System.out.println("el tamaño del array es:"+listadoJson.size());
+                for (Object ele:listadoJson) {
+                    file.write(ele.toString());
+                    file.flush();
+                }
+
+
+                return new ResponseEntity<>("El fichero se ha exportado correctamente", HttpStatus.OK);
+            } catch (JsonProcessingException e) {
+                System.out.println("error procesando el JSON------------------------");
+                throw new RuntimeException(e.getMessage());
+            } catch (IOException e) {
+                System.out.println("Error al escribir en el fichero********************************");
+            }
         }
         return null;
-    }
-
-    private static List<ActividadDto> convertirListado(List<Actividad> lista) {
-        List<ActividadDto> listado = new ArrayList<>();
-        ActividadDto aux = new ActividadDto();
-        for (int i = 0; i < lista.size(); i++) {
-            aux.setId(lista.get(i).getId());
-            aux.setNombre(lista.get(i).getNombre());
-            aux.setDescripcion(lista.get(i).getDescripcion());
-            aux.setNumUsuarios(lista.get(i).getNumUsuarios());
-            aux.setCapacidadMaxima(lista.get(i).getCapacidadMaxima());
-            aux.setUsuarios(lista.get(i).getUsuarios());
-            listado.add(aux);
-        }
-        return listado;
     }
 
 }
